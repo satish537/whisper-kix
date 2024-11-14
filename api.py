@@ -42,7 +42,7 @@ async def audio_to_transcript_endpoint_1(
 async def handle_transcription_background_task_whisper(audio_path, recording_id):
     try:
         timestamp = int(time.time())
-        output_dir = f"/home/azureuser/{recording_id}_{timestamp}/"
+        output_dir = f"/home/ubuntu/files/{recording_id}_{timestamp}/"
         os.makedirs(output_dir, exist_ok=True)
 
         response = process_audio_file_whisper(
@@ -102,7 +102,7 @@ async def audio_transcribe_endpoint(
 
 async def handle_transcription_background_task(audio_path: str, recording_id: str, participants: List[str]):
     try:
-        output_dir = "/home/azureuser/"
+        output_dir = "/home/ubuntu/files/"
         response = process_audio_file(
             audio_path,
             output_dir,
@@ -151,7 +151,7 @@ async def audio_to_transcript_endpoint_1(
 # Background task to handle transcription process
 async def handle_transcription_background_task1(audio_path, recording_id):
     try:
-        output_dir = "/home/azureuser/"
+        output_dir = "/home/ubuntu/files/"
         response = process_audio_file1(  # Remove whisper_model parameter
             audio_path,
             output_dir,
