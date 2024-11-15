@@ -197,10 +197,10 @@ def create_config(output_dir):
 
 def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, batch_size=8, suppress_numerals=True):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    
     # Start timing the transcription process
     start_time = time.time()    
-    
+    '''
     # Stemming: Isolate vocals from audio
     if enable_stemming:
         return_code = os.system(
@@ -219,18 +219,19 @@ def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, bat
             )
     else:
         vocal_target = audio_path
-
+    '''
+    print('whisper start') 
     # Transcribe the audio file using Whisper
     whisper_results, language, audio_waveform = transcribe_batched(
-        vocal_target,
-        language=None,  # autodetect language
+        audio_path,
+        language="en",  # autodetect language
         batch_size=batch_size,
         model_name="large",  # Use model name directly
         compute_dtype="float16",
         suppress_numerals=suppress_numerals,
         device=device,
     )
-
+    print('whisper done')
     # Align transcription using Wav2Vec2
     alignment_model, alignment_tokenizer = load_alignment_model(device, dtype=torch.float16 if device == "cuda" else torch.float32)
 
@@ -245,19 +246,20 @@ def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, bat
     segments, scores, blank_token = get_alignments(emissions, tokens_starred, alignment_tokenizer)
     spans = get_spans(tokens_starred, segments, blank_token)
     word_timestamps = postprocess_results(text_starred, spans, stride, scores)
-
+    print("alignment segnments done")
     # Save audio as mono for NeMo compatibility
     temp_path = os.path.join(output_dir, "temp_outputs")
     os.makedirs(temp_path, exist_ok=True)
     torchaudio.save(os.path.join(temp_path, "mono_file.wav"), audio_waveform.cpu().unsqueeze(0).float(), 16000, channels_first=True)
-
+    print("Full transcript")
+    print(full_transcript)
 
     # Speaker Diarization using NeMo
     msdd_model = NeuralDiarizer(cfg=create_config(temp_path)).to(device)
     msdd_model.diarize()
     del msdd_model
     torch.cuda.empty_cache()
-
+    print("Nemo ---Diarization ")
     # Map speakers to sentences according to timestamps
     speaker_ts = []
     with open(os.path.join(temp_path, "pred_rttms", "mono_file.rttm"), "r") as f:
@@ -269,7 +271,7 @@ def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, bat
             speaker_ts.append([s, e, int(line_list[11].split("_")[-1])])
 
     wsm = get_words_speaker_mapping(word_timestamps, speaker_ts, "start")
-
+    print("End of the timestamps")
     # Re-align using punctuation if applicable
     if language in punct_model_langs:
         punct_model = PunctuationModel(model="kredor/punctuate-all")
@@ -284,7 +286,7 @@ def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, bat
 
     wsm = get_realigned_ws_mapping_with_punctuation(wsm)
     ssm = get_sentences_speaker_mapping(wsm, speaker_ts)
-
+    print("End Puntuation.....")
     # Generate speaker-aware transcript
     speaker_aware_transcript = []
     for sentence in ssm:

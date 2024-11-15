@@ -8,8 +8,8 @@ import requests, json
 import whisperx
 from services.audio_to_transcript_test import process_transcript_test
 import torch
-from services.audio_whisper import process_audio_file_whisper
-from services.audio_whisper import cleanup
+from services.audio_whisperx import process_audio_file_whisper
+from services.audio_whisperx import cleanup
 from whisperx import load_model
 import time  
 
@@ -228,3 +228,61 @@ async def handle_transcription_background_task_nemo(audio_path, recording_id):
 
     except Exception as e:
         print(f"Error processing transcription for recording id {recording_id}: {e}")
+
+
+
+@app.post("/audio-trans-video-whisper")
+async def audio_to_transcript_endpoint_1(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    recording_id: str = Form(...)
+):
+    try:
+        audio_path, audiofile = await rename_and_save_file(file, document_name="document", version_id="0.0.1")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error saving file: {str(e)}")
+
+    # Add transcription task to the background (NON-BLOCKING)
+    background_tasks.add_task(handle_transcription_background_task_whisper, audio_path, recording_id)
+
+    # Return a success response immediately while the transcription is processed in the background
+    return {"status": "success", "message": "Transcription request received"}
+
+# Background task to handle transcription process
+async def handle_transcription_background_task_whisper(audio_path, recording_id):
+    try:
+        timestamp = int(time.time())
+        output_dir = "/home/ubuntu/files/"
+        os.makedirs(output_dir, exist_ok=True)
+
+        response = process_audio_file_whisper(
+            audio_path,
+            output_dir,
+            enable_stemming=True,
+            batch_size=8,
+            suppress_numerals=True,
+        )
+
+        # Callback URL to notify that transcription is complete
+        url = 'https://app.hapie.ai/api/recording/transcript-callback'
+        data = {
+            "recordingId": recording_id,
+            "response": json.dumps(response),
+            "apiKey": "SADIGIalsdfnIJJKBDSNFOBSasbdnbdigasnsaiubfjk=="
+        }
+
+        # Send the result to the callback URL
+        requests.post(url, data=data)
+
+    except Exception as e:
+        print(f"Error processing transcription for recording id {recording_id}: {e}")
+
+    finally:
+        # Cleanup the entire output directory after processing is complete
+        if output_dir:
+            cleanup(output_dir)
+
+
+
+
+
