@@ -268,7 +268,7 @@ async def handle_transcription_background_task_whisper(audio_path, id, questionI
         )
 
         # Callback URL to notify that transcription is complete
-        url = 'https://f08d-2402-a00-167-2abe-2586-80ab-f9d8-c8d7.ngrok-free.app/api/transcript/callback'
+        url = 'https://new.kix.co/api/transcript/callback'
         data = {
             "id": id,
             "questionId": questionId,
