@@ -238,6 +238,7 @@ async def audio_to_transcript_endpoint_1(
     id: str = Form(...),
     questionId: str = Form(None),
     interpreterId: str = Form(None),
+    participantId: str = Form(None),
     isOffline: bool = Form(...)
 ):
     try:
@@ -246,7 +247,7 @@ async def audio_to_transcript_endpoint_1(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error saving file: {str(e)}")
 
     # Add transcription task to the background (NON-BLOCKING)
-    background_tasks.add_task(handle_transcription_background_task_whisper, audio_path, id, questionId, interpreterId, isOffline)
+    background_tasks.add_task(handle_transcription_background_task_whisper, audio_path, id, questionId, interpreterId, participantId, isOffline)
 
     # Return a success response immediately while the transcription is processed in the background
     return {"status": "success", "message": "Transcription request received"}
@@ -272,6 +273,7 @@ async def handle_transcription_background_task_whisper(audio_path, id, questionI
             "id": id,
             "questionId": questionId,
             "interpreterId": interpreterId,
+            "participantId": participantId,
             "isOffline": isOffline,
             "response": json.dumps(response),
             "apiKey": "SADIGIalsdfnIJJKBDSNFOBSasbdnbdigasnsaiubfjk=="
