@@ -290,7 +290,7 @@ def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, bat
     # Generate speaker-aware transcript
     speaker_aware_transcript = []
     for sentence in ssm:
-        speaker_aware_transcript.append(f"{sentence['speaker']}: {sentence['text'].strip()}")
+        speaker_aware_transcript.append(f"{sentence['text'].strip()}")
 
     speaker_aware_transcript = "\n\n".join(speaker_aware_transcript)
 
@@ -299,9 +299,15 @@ def process_audio_file_whisper(audio_path, output_dir, enable_stemming=True, bat
     for word_dict in wsm:
         word_json.append({
             "word": word_dict["word"],
-            "start": format_timestamp(word_dict["start_time"]),
-            "end": format_timestamp(word_dict["end_time"]),
-            "speaker": word_dict["speaker"]
+            "startTime": {
+                "seconds": format_timestamp(word_dict["start_time"]),
+                "nanos": 0
+            },
+            "endTime": {
+                "seconds": format_timestamp(word_dict["end_time"]),
+                "nanos": 0
+            },
+            "speakerTag": word_dict["speaker"]
         })
 
     # Cleanup temp files
