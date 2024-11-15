@@ -235,7 +235,10 @@ async def handle_transcription_background_task_nemo(audio_path, recording_id):
 async def audio_to_transcript_endpoint_1(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    recording_id: str = Form(...)
+    id: str = Form(...),
+    questionId: str = Form(None),
+    interpreterId: str = Form(None),
+    isOffline: bool = Form(...)
 ):
     try:
         audio_path, audiofile = await rename_and_save_file(file, document_name="document", version_id="0.0.1")
@@ -243,13 +246,13 @@ async def audio_to_transcript_endpoint_1(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error saving file: {str(e)}")
 
     # Add transcription task to the background (NON-BLOCKING)
-    background_tasks.add_task(handle_transcription_background_task_whisper, audio_path, recording_id)
+    background_tasks.add_task(handle_transcription_background_task_whisper, audio_path, id, questionId, interpreterId, isOffline)
 
     # Return a success response immediately while the transcription is processed in the background
     return {"status": "success", "message": "Transcription request received"}
 
 # Background task to handle transcription process
-async def handle_transcription_background_task_whisper(audio_path, recording_id):
+async def handle_transcription_background_task_whisper(audio_path, id, questionId, interpreterId, isOffline):
     try:
         timestamp = int(time.time())
         output_dir = "/home/ubuntu/files/"
@@ -264,9 +267,12 @@ async def handle_transcription_background_task_whisper(audio_path, recording_id)
         )
 
         # Callback URL to notify that transcription is complete
-        url = 'https://app.hapie.ai/api/recording/transcript-callback'
+        url = 'https://f08d-2402-a00-167-2abe-2586-80ab-f9d8-c8d7.ngrok-free.app/api/transcript/callback'
         data = {
-            "recordingId": recording_id,
+            "id": id,
+            "questionId": questionId,
+            "interpreterId": interpreterId,
+            "isOffline": isOffline,
             "response": json.dumps(response),
             "apiKey": "SADIGIalsdfnIJJKBDSNFOBSasbdnbdigasnsaiubfjk=="
         }
