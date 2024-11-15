@@ -253,7 +253,7 @@ async def audio_to_transcript_endpoint_1(
     return {"status": "success", "message": "Transcription request received"}
 
 # Background task to handle transcription process
-async def handle_transcription_background_task_whisper(audio_path, id, questionId, interpreterId, isOffline):
+async def handle_transcription_background_task_whisper(audio_path, id, questionId, interpreterId, participantId, isOffline):
     try:
         timestamp = int(time.time())
         output_dir = "/home/ubuntu/files/"
